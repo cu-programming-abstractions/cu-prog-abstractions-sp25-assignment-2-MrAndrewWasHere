@@ -1,16 +1,44 @@
 #include "RisingTides.h"
+#include "queue.h"
 using namespace std;
 
 Grid<bool> floodedRegionsIn(const Grid<double>& terrain,
                             const Vector<GridLocation>& sources,
                             double height) {
-    /* TODO: Delete this line and the next four lines, then implement this function. */
-    (void) terrain;
-    (void) sources;
-    (void) height;
-    return {};
-}
+    Grid<bool> flooded(terrain.numRows(), terrain.numCols(), false);
+    Queue<GridLocation> toVisit;
 
+    for (const GridLocation& source : sources) {
+        // Only consider valid starting points below water height
+        if (terrain.inBounds(source.row, source.col) && terrain[source.row][source.col] <= height) {
+            toVisit.enqueue(source);
+            flooded[source.row][source.col] = true;
+        }
+    }
+
+    // Direction vectors for 4 cardinal directions
+    const Vector<int> dRow = {-1, 1, 0, 0};
+    const Vector<int> dCol = {0, 0, -1, 1};
+
+    while (!toVisit.isEmpty()) {
+        GridLocation current = toVisit.dequeue();
+
+        for (int i = 0; i < 4; ++i) {
+            int newRow = current.row + dRow[i];
+            int newCol = current.col + dCol[i];
+            GridLocation neighbor(newRow, newCol);
+
+            if (terrain.inBounds(newRow, newCol) &&
+                !flooded[newRow][newCol] &&
+                terrain[newRow][newCol] <= height) {
+                flooded[newRow][newCol] = true;
+                toVisit.enqueue(neighbor);
+            }
+        }
+    }
+
+    return flooded;
+}
 
 
 /***** Test Cases Below This Point *****/
@@ -262,4 +290,28 @@ PROVIDED_TEST("Stress test: Handles a large, empty world quickly.") {
             EXPECT_EQUAL(water[row][col], true);
         }
     }
+}
+STUDENT_TEST("Water is trapped inside a bowl") {
+    Grid<double> terrain = {
+        { 5, 5, 5, 5, 5 },
+        { 5, 1, 1, 1, 5 },
+        { 5, 1, 0, 1, 5 },
+        { 5, 1, 1, 1, 5 },
+        { 5, 5, 5, 5, 5 }
+    };
+
+    Vector<GridLocation> sources = {
+        { 2, 2 }  // the bottom of the bowl
+    };
+
+    Grid<bool> expected = {
+        { false, false, false, false, false },
+        { false,  true,  true,  true, false },
+        { false,  true,  true,  true, false },
+        { false,  true,  true,  true, false },
+        { false, false, false, false, false }
+    };
+
+    Grid<bool> result = floodedRegionsIn(terrain, sources, 2.0);
+    EXPECT_EQUAL(result, expected);
 }

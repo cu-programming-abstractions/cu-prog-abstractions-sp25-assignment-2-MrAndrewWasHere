@@ -3,52 +3,81 @@
 using namespace std;
 
 Map<string, double> kGramsIn(const string& str, int kGramLength) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) str;
-    (void) kGramLength;
-    return {};
+    if (kGramLength <= 0) error("kGramLength must be positive");
+    if ((int)str.length() < kGramLength) return {};
+
+    Map<string, double> result;
+    for (int i = 0; i <= (int)str.length() - kGramLength; i++) {
+        string kgram = str.substr(i, kGramLength);
+        result[kgram]++;
+    }
+    return result;
 }
 
 Map<string, double> normalize(const Map<string, double>& input) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) input;
-    return {};
+    if (input.isEmpty()) error("Input map is empty");
+
+    double sumSquares = 0;
+    for (string key : input) {
+        sumSquares += input[key] * input[key];
+    }
+    if (sumSquares == 0) error("Cannot normalize zero vector");
+
+    double norm = sqrt(sumSquares);
+    Map<string, double> result;
+    for (string key : input) {
+        result[key] = input[key] / norm;
+    }
+    return result;
 }
 
 Map<string, double> topKGramsIn(const Map<string, double>& source, int numToKeep) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) source;
-    (void) numToKeep;
-    return {};
+    if (numToKeep < 0) error("Invalid number of k-grams");
+
+    if (numToKeep == 0) return {};
+    if (numToKeep >= source.size()) return source;
+
+    Vector<pair<string, double>> vec;
+    for (string key : source) {
+        vec.add({key, source[key]});
+    }
+
+    sort(vec.begin(), vec.end(), [](auto& a, auto& b) {
+        return a.second > b.second;
+    });
+
+    Map<string, double> result;
+    for (int i = 0; i < numToKeep; i++) {
+        result[vec[i].first] = vec[i].second;
+    }
+    return result;
 }
 
 double cosineSimilarityOf(const Map<string, double>& lhs, const Map<string, double>& rhs) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) lhs;
-    (void) rhs;
-    return {};
+    double dot = 0;
+    for (string key : lhs) {
+        if (rhs.containsKey(key)) {
+            dot += lhs[key] * rhs[key];
+        }
+    }
+    return dot;
 }
-
 string guessLanguageOf(const Map<string, double>& textProfile,
                        const Set<Corpus>& corpora) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) textProfile;
-    (void) corpora;
-    return "";
+    if (corpora.isEmpty() || textProfile.isEmpty()) error("No corpora or profile");
+
+    string bestMatch;
+    double highestScore = -INFINITY;
+
+    for (const Corpus& corpus : corpora) {
+        double score = cosineSimilarityOf(textProfile, corpus.profile);
+        if (score > highestScore) {
+            highestScore = score;
+            bestMatch = corpus.name;
+        }
+    }
+    return bestMatch;
 }
-
-
-
 
 /* * * * *   Test Cases Below This Point   * * * * */
 
